@@ -5,6 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"net/http"
 	"io/ioutil"
@@ -19,7 +20,22 @@ func Publishs() *publishsTable {
 	return new(publishsTable)
 }
 
-func (p *publishsTable) PubsByIds(pubids []string) []map[string]string {
+func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
+	if publishids == nil {
+		return nil
+	}
+	pubids := make([]string, 0)
+	switch v := publishids.(type) {
+	case int:
+		pubids = []string{strconv.Itoa(v)}
+	case []int:
+		for _, vv := range v {
+			pubids = append(pubids, strconv.Itoa(vv))
+		}
+	case []string:
+		pubids = v
+	}
+	
 	sql := "SELECT * FROM `publishs` WHERE `id` IN (%s)"
 	db, err := sqlEngine.Open(driver, dsn)
 	if err != nil {
@@ -73,7 +89,22 @@ func (p *publishsTable) PubsByIds(pubids []string) []map[string]string {
 }
 
 // GetPubByPubid get publish by publish_id
-func (p *publishsTable) JoinPubsByIds(pubids []string) []map[string]string {
+func (p *publishsTable) JoinPubsByIds(publishids interface{}) []map[string]string {
+	if publishids == nil {
+		return nil
+	}
+	pubids := make([]string, 0)
+	switch v := publishids.(type) {
+	case int:
+		pubids = []string{strconv.Itoa(v)}
+	case []int:
+		for _, vv := range v {
+			pubids = append(pubids, strconv.Itoa(vv))
+		}
+	case []string:
+		pubids = v
+	}
+	
 	fields := []string{
 		"publishs.id",
 		"publishs.advertiser_id",
@@ -96,16 +127,16 @@ func (p *publishsTable) JoinPubsByIds(pubids []string) []map[string]string {
 		"publishs.updated_at",
 		"publishs.created_at",
 		"publishs.again_num",
-		"cards.status as cards_status",
-		"cards.promote_type as promote_type",
-		"cards.promote_route as promote_route",
+		"cards.status as cardStatus",
+		"cards.promote_type as promoteType",
+		"cards.promote_route as promoteRoute",
 		"advertisers.shortcom as shortcom",
 		"advertisers.logo as comlogo",
 		"advertisers.industry",
-		"advertisers.type as advertiser_type",
-		"advertisers.subtype as advertiser_subtype",
+		"advertisers.type as adverType",
+		"advertisers.subtype as adverSubtype",
 		"advertisers.istop as istop",
-		"advertisers.version as publish_version",
+		"advertisers.version as versionNo",
 	}
 	fieldsStr := strings.Join(fields, ",")
 
@@ -176,14 +207,14 @@ func (p *publishsTable) JoinPubsByIds(pubids []string) []map[string]string {
 }
 
 // Get lastest pubversion
-func (p *publishsTable) LastestPubversion(pubid string, pubvers int) (ret map[string]interface{}) {
+func (p *publishsTable) LastestPubversion(pubid int, pubvers int) (ret map[string]interface{}) {
 	var apiUrl string
 	if pubvers == 2 {
 		apiUrl = config.Get("ZTC_API_HOST_V2", "http://alpha.e.tvm.cn/restful/api/publish/pubversion") +
-			"?pid=" + pubid
+			"?pid=" + strconv.Itoa(pubid)
 	} else {
 		apiUrl = config.Get("ZTC_API_HOST", "http://alpha.e.tvm.cn/api/publish") +
-			"?publishid=" + pubid
+			"?publishid=" + strconv.Itoa(pubid)
 	}
 	res, err := http.Get(apiUrl)
 	if err != nil {
@@ -198,14 +229,30 @@ func (p *publishsTable) LastestPubversion(pubid string, pubvers int) (ret map[st
 	err = json.Unmarshal(data, &f)
 	m := f.(map[string]interface{})
 	ret = make(map[string]interface{})
-	for k, v := range m {
-		switch k {
-		case "target","time","deliverychannels","version":
-			ret[k] = v
-		case "keyword":
-			kv := v.(map[string]interface{})
-			ret["card"] = kv["card"]
+	if pubvers == 2 {
+		for k, v := range m {
+			switch k {
+			case "version","target","time","deliverychannels":
+				ret[k] = v
+			case "keyword":
+				kv := v.(map[string]interface{})
+				ret["card"] = kv["card"]
+			}
+		}
+	} else {
+		if m["code"] != "0" {
+			return
+		}
+		m = m["msg"].(map[string]interface{})
+		for k, v := range m {
+			switch k {
+			case "version","target","time":
+				ret[k] = v
+			case "keyword":
+				kv := v.(map[string]interface{})
+				ret["card"] = kv["card"]
+			}
 		}
 	}
-	return ret
+	return
 }
