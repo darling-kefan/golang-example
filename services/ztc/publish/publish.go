@@ -4,12 +4,14 @@ import (
 	_ "fmt"
 	"time"
 	"strconv"
-
+	"strings"
+	
 	"models"
 )
 
 const (
 	PRODUCT_BASIC, PRODUCT_PROFESSIONAL = 1, 2
+	DISPLAY_CARD, DISPLAY_VIDEO, DISPLAY_KJDT, DISPLAY_BANNER = 1, 2, 3, 4
 )
 
 type Pub struct {
@@ -24,10 +26,9 @@ type Pub struct {
 	againNum      float64 //权重
 
 	status        int //状态，1-正常、2-暂停、3-停止
-	check         int //审核状态，1-等待审核、2-审核不通过、3-审核通过
 	versionNo     int //自投放平台版本号，1-版本v1、2-版本v2
 	cardStatus    int //创意状态，1-审核通过、2-等待初审、4-复审不通过、5-等待复审、6-初审不通过
-	promoteRoute  int //推广渠道，1-微信、2-APP、3-支付宝
+	promoteRoute  string //推广渠道，1-微信、2-APP、3-支付宝，多个渠道用英文逗号分割
 	
 	adverType     int //广告主类型，1-正式账户、2-运营账户、3-测试账户
 	adverSubtype  int //广告主子类型(仅在advertiser_type=3时有效)，1-技术测试、2-免费帐号、3-试投帐号
@@ -48,11 +49,11 @@ type Pub struct {
 	product       int //产品类型，1-基础版、2-专业版
 }
 
-func NewPub(pub map[string]string) (ret *Pub) {
-	ret = new(Pub)
-	ret.setPub(pub)
-	ret.setPubversion()
-	ret.setProduct()
+func NewPub(pub map[string]string) (p *Pub) {
+	p = new(Pub)
+	p.setPub(pub)
+	p.setPubversion()
+	p.setProduct()
 	return
 }
 
@@ -107,11 +108,6 @@ func (p *Pub) setPub(pub map[string]string) {
 			p.status = v
 		}
 	}
-	if check, ok := pub["check"]; ok {
-		if v, err := strconv.Atoi(check); err == nil {
-			p.check = v
-		}
-	}
 	if versionNo, ok := pub["versionNo"]; ok {
 		if v, err := strconv.Atoi(versionNo); err == nil {
 			p.versionNo = v
@@ -123,9 +119,7 @@ func (p *Pub) setPub(pub map[string]string) {
 		}
 	}
 	if promoteRoute, ok := pub["promoteRoute"]; ok {
-		if v, err := strconv.Atoi(promoteRoute); err == nil {
-			p.promoteRoute = v
-		}
+		p.promoteRoute = promoteRoute
 	}
 	if adverType, ok := pub["adverType"]; ok {
 		if v, err := strconv.Atoi(adverType); err == nil {
@@ -230,5 +224,39 @@ func (p *Pub) setPubversion() {
 }
 
 func (p *Pub) setProduct() {
-	models.Advversions().BasicAdverIds()
+	isBasic := false
+	basicAdvids := models.Advversions().BasicAdverIds()
+	for _, v := range basicAdvids {
+		if v == p.advertiserId {
+			isBasic = true
+		}
+	}
+	if isBasic == true {
+		p.product = PRODUCT_BASIC
+	} else {
+		p.product = PRODUCT_PROFESSIONAL
+	}
+}
+
+func (p *Pub) Product() int {
+	return p.product
+}
+
+func (p *Pub) Agents() (agents []int) {
+	if len(p.promoteRoute) <= 0 {
+		agents = []int{1}
+	} else {
+		pr := strings.Split(p.promoteRoute, ",")
+		for _, v := range pr {
+			if vv, err := strconv.Atoi(v); err == nil {
+				agents = append(agents, vv)
+			}
+		}
+	}
+	return
+}
+
+// DisplayWay get the ad display way
+func (p *Pub) DisplayWay() int {
+	return p.adpositionId
 }

@@ -61,7 +61,6 @@ func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
 	rowCount := 0
 	res := make([]map[string]string, len(pubids))
 	for rows.Next() {
-		fmt.Println(rowCount)
 		err = rows.Scan(scanArgs...)
 		if err != nil {
 			panic(err.Error())
@@ -78,7 +77,6 @@ func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
 			line[columns[k]] = value
 		}
 		res[rowCount] = line
-		fmt.Println(line)
 		rowCount++
 	}
 	if err = rows.Err(); err != nil {

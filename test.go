@@ -12,7 +12,11 @@ func main() {
 	// publishs := models.Publishs().JoinPubsByIds([]int{22983,22969})
 	publishs := models.Publishs().JoinPubsByIds([]int{22983})
 	pub := pubservice.NewPub(publishs[0])
-	fmt.Println(pub)
+	// fmt.Println(pub)
+	fmt.Println(pub.Product())
+	fmt.Println(pub.Agents())
+	pubtarget := pubservice.NewPubTarget(pub, "")
+	fmt.Println(pubtarget)
 
 	//publishs = models.Publishs().PubsByIds([]string{"1000", "22969", "22974"})
 	//fmt.Println(publishs)
