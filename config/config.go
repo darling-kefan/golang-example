@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"log"
 	"strings"
 	"io/ioutil"
@@ -10,9 +11,9 @@ var cfg map[string]string
 
 func init() {
 	cfg = make(map[string]string)
-
 	// How to get project root directory?
-	envFile := "/home/shouqiang/codes/Go/publish-profile/src/.env"
+	root, _ := os.Getwd()
+	envFile := root + "/.env"
 	content, err := ioutil.ReadFile(envFile)
 	if err != nil {
 		log.Fatal(err)

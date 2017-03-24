@@ -2,11 +2,13 @@ package publish
 
 import (
 	"fmt"
+	"log"
 	"time"
 	"strconv"
 	"strings"
-	"github.com/go-redis/redis"
-	
+	"github.com/garyburd/redigo/redis"
+
+	"config"
 	"models"
 	advService "services/advertiser"
 )
@@ -138,25 +140,83 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 
 	// 判定广告主是否被屏蔽
 	shields := models.Shields().Find(3, []string{"1","2"}, pt.pub.advertiserId, []string{"id"})
-	if len(shields) == 0 {
+	if len(shields) > 0 {
 		ret = false
-		reports = append(reports, strconv.Itoa(pt.pub.advertiserId) + " is in shields table")
+		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " is in shields table")
 	}
 
 	// 判断广告主资质
 	if !advService.New(pt.pub.advertiserId).HasSyncCondition() {
 		ret = false
-		reports = append(reports, strconv.Itoa(pt.pub.advertiserId) + " qualification is not enough.")
+		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " qualification is not enough.")
 	}
+
+	c, err := redis.Dial("tcp", config.Get("REDIS", "127.0.0.1:6379"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer c.Close()
 	
 	// 判断广告主是否还有余额(测试广告主不检测广告主余额)
 	if pt.pub.adverType != 3 {
-		
+		advkey := "budget:adv:" + strconv.Itoa(pt.pub.advertiserId)
+		ret, err := c.Do("HGETALL", advkey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if r, ok := ret.([]interface{}); ok {
+			budget := make(map[string]string, len(r) / 2)
+			for i := 0; i < len(r); i = i + 2 {
+				vk, _ := r[i].([]byte)
+				vv, _ := r[i + 1].([]byte)
+				budget[string(vk)] = string(vv)
+			}
+			amount := 0.0
+			if v, isPresent := budget["amount"]; isPresent {
+				amount, _ = strconv.ParseFloat(v, 64)
+			} else {
+				ret = false
+				reports = append(reports, advkey + " is not exist, or field amount not exist.")
+			}
+			consume := 0.0
+			if v, isPresent := budget["consume"]; isPresent {
+				consume, _ = strconv.ParseFloat(v, 64)
+			}
+			if consume >= amount {
+				ret = false
+				reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " amount not enough.")
+			}
+		}
 	}
 
 	// 判断预算是否花超
-
-	
+	if time.Now().Format("2006-01-02") == pt.date {
+		pubkey := "budget:pub:" + strconv.Itoa(pt.pub.id) + ":" + time.Now().Format("20060102")
+		ret, err := c.Do("HGETALL", pubkey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if r, ok := ret.([]interface{}); ok {
+			budget := make(map[string]string, len(r) / 2)
+			for i := 0; i < len(r); i = i + 2 {
+				vk, _ := r[i].([]byte)
+				vv, _ := r[i + 1].([]byte)
+				budget[string(vk)] = string(vv)
+			}
+			ceiling := 0.0
+			if v, isPresent := budget["ceiling"]; isPresent {
+				ceiling, _ = strconv.ParseFloat(v, 64)
+			}
+			consume := 0.0
+			if v, isPresent := budget["consume"]; isPresent {
+				consume, _ = strconv.ParseFloat(v, 64)
+			}
+			if consume >= ceiling {
+				ret = false
+				reports = append(reports, "The consume more than the ceiling.")
+			}
+		}
+	}
 	
 	return
 }

@@ -4,19 +4,20 @@ import (
 	"fmt"
 	"models"
 	pubservice "services/ztc/publish"
-	advservice "services/advertiser"
+	//advservice "services/advertiser"
 	_ "strconv"
 	_ "reflect"
+	
 )
 
 func main() {
-	boolRet := advservice.New(90).HasSyncCondition()
-	fmt.Println(boolRet)
-	return
+	//boolRet := advservice.New(90).HasSyncCondition()
+	//fmt.Println(boolRet)
+	//return
 	//shields := models.Shields().Find(2, []string{"1","2"}, 90,[]string{"*"})
 	//fmt.Println(shields)
 	// publishs := models.Publishs().JoinPubsByIds([]int{22983,22969})
-	publishs := models.Publishs().JoinPubsByIds([]int{22983})
+	publishs := models.Publishs().JoinPubsByIds([]int{22956})
 	pub := pubservice.NewPub(publishs[0])
 	// fmt.Println(pub)
 	//fmt.Println(pub.Product())
