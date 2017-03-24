@@ -83,24 +83,25 @@ func (a *advertisersTable) Qualifis(aids []string) []map[string]string {
 	}
 
 	fields := []string{
-		"advertisers.*",
+		"advertisers.id as advertiser_id",
+		"advertisers.type as advertiser_type",
 		"qualifis.id as qualifis_id",
 		"qualifis.type as qualifis_type",
 		"qualifis.on_type as qualifis_on_type",
 		"qualifis.code as qualifis_code",
-		"qualifis.codeimg as qualifis_codeimg",
+		//"qualifis.codeimg as qualifis_codeimg",
 		"qualifis.status as qualifis_status",
-		"qualifis.msg as qualifis_msg",
+		//"qualifis.msg as qualifis_msg",
 		"qualifis.verifytime as qualifis_verifytime",
 		"qualifis.passtime as qualifis_passtime",
 		"qualifis.expiry as qualifis_expiry",
-		"qualifis.created_at as qualifis_created_at",
-		"qualifis.updated_at as qualifis_updated_at",
+		//"qualifis.created_at as qualifis_created_at",
+		//"qualifis.updated_at as qualifis_updated_at",
 	}
 	sql := "SELECT %s FROM `advertisers` LEFT JOIN `qualifis` ON `advertisers`.`id` = `qualifis`.`advertiser_id` " +
 		"WHERE `advertisers`.`id` IN (%s)"
 	sql = fmt.Sprintf(sql, strings.Join(fields, ","), strings.Join(aids, ","))
-	fmt.Println(sql)
+	//fmt.Println(sql)
 
 	db, err := sqlEngine.Open(driver, dsn)
 	if err != nil {
@@ -135,7 +136,7 @@ func (a *advertisersTable) Qualifis(aids []string) []map[string]string {
 			if col == nil {
 				value = "NULL"
 			} else {
-				value = string(value)
+				value = string(col)
 			}
 			line[columns[k]] = value
 		}

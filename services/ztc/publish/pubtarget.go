@@ -1,8 +1,14 @@
 package publish
 
 import (
-	_ "fmt"
+	"fmt"
 	"time"
+	"strconv"
+	"strings"
+	"github.com/go-redis/redis"
+	
+	"models"
+	advService "services/advertiser"
 )
 
 type PubTarget struct {
@@ -39,25 +45,28 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	}
 
 	// 检查小时
+	var week int
 	if weekday := date.Weekday(); weekday == time.Sunday {
-		week := 7
+		week = 7
 	} else {
-		week := int(weekday)
+		week = int(weekday)
 	}
-	isCurHourValid = false
-	if hours, ok := pt.pub.times[strconv.Itoa(week)]; ok {
+	isCurHourValid := false
+	if len(pt.pub.times) == 0 {
+		isCurHourValid = true
+	}
+	hours, ok := pt.pub.times[strconv.Itoa(week)]
+	if ok {
 		hour := time.Now().Hour()
 		for _, v := range hours {
 			if strconv.Itoa(hour) == strings.TrimLeft(v, "0") {
 				isCurHourValid = true
 			}
 		}
-	} else {
-		isCurHourValid = true
 	}
 	if isCurHourValid == false {
 		ret = false
-		reports = append(reports, fmt.Sprintf("Hour points: %v", hours))
+		reports = append(reports, fmt.Sprintf("Hour points: %v", pt.pub.times))
 	}
 
 	// 计划状态
@@ -96,41 +105,58 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	displayWay := pt.pub.DisplayWay()
 	// 视频创意不验证logo
 	if displayWay != DISPLAY_VIDEO {
-		if logo, ok := p.pub.card["logo"]; !ok {
+		logo, ok := pt.pub.card["logo"]
+		if !ok {
 			ret = false
 			reports = append(reports, "Card logo is not existed.")
-		}
-		if logoStr, err := logo.(string); err == nil {
-			logoStr = strings.ToLower(logoStr)
-			if !strings.HasPrefix(logoStr, "http://") || !strings.HasPrefix(logoStr, "https://") {
-				ret = false
-				reports = append(reports, "Card logo is valid.")
+		} else {
+			if logoStr, ok := logo.(string); ok {
+				logoStr = strings.ToLower(logoStr)
+				if !strings.HasPrefix(logoStr, "http://") && !strings.HasPrefix(logoStr, "https://") {
+					ret = false
+					reports = append(reports, "Card logo is valid.")
+				}
 			}
 		}
 	}
 	// 视频和开机大图不验证url
 	if displayWay != DISPLAY_VIDEO || displayWay != DISPLAY_KJDT {
-		if url, ok := p.pub.card["url"]; !ok {
+		url, ok := pt.pub.card["url"]
+		if !ok {
 			ret = false
 			reports = append(reports, "Card url is not existed.")
-		}
-		if urlStr, err := url.(string); err == nil {
-			urlStr = strings.ToLower(urlStr)
-			if !strings.HasPrefix(urlStr, "http://") || !strings.HasPrefix(urlStr, "https://") {
-				ret = false
-				reports = append(reports, "Card url is valid.")
+		} else {
+			if urlStr, ok := url.(string); ok {
+				urlStr = strings.ToLower(urlStr)
+				if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
+					ret = false
+					reports = append(reports, "Card url is valid.")
+				}
 			}
 		}
 	}
 
 	// 判定广告主是否被屏蔽
-	
+	shields := models.Shields().Find(3, []string{"1","2"}, pt.pub.advertiserId, []string{"id"})
+	if len(shields) == 0 {
+		ret = false
+		reports = append(reports, strconv.Itoa(pt.pub.advertiserId) + " is in shields table")
+	}
 
+	// 判断广告主资质
+	if !advService.New(pt.pub.advertiserId).HasSyncCondition() {
+		ret = false
+		reports = append(reports, strconv.Itoa(pt.pub.advertiserId) + " qualification is not enough.")
+	}
+	
 	// 判断广告主是否还有余额(测试广告主不检测广告主余额)
+	if pt.pub.adverType != 3 {
+		
+	}
 
 	// 判断预算是否花超
 
-	// 判断广告主资质
+	
 	
 	return
 }

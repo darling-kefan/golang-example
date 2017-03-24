@@ -5,8 +5,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
 	"log"
-
-	"config"
+	"strings"
 )
 
 type shieldsTable struct{}
@@ -20,19 +19,18 @@ func Shields() *shieldsTable {
 // products  产品id，1直通车基础版 2-直通车专业版 3-KA
 // markerIds 分类id/创意id/广告主id，与参数$type对应
 // fields    字段
-func (s *shieldsTable) Find(stype int, products []string, markerIds []string, fields []string) (ret []map[string]string) {
+func (s *shieldsTable) Find(stype int, products []string, markerId int, fields []string) (ret []map[string]string) {
 	sql := "SELECT " + strings.Join(fields, ",") + " FROM `shields` WHERE `status` = 1"
 	if stype == 1 || stype == 2 || stype == 3 {
-		sql += " AND `type` = %s"
+		sql += " AND `type` = %d"
 	}
-	if productIds != nil || len(productIds) != 0 {
+	if products != nil || len(products) != 0 {
 		sql += " AND `product_id` in (%s)"
 	}
-	if markerIds != nil || len(markerIds) != 0 {
-		sql += " AND `marker_id` in (%s)"
+	if markerId != 0 {
+		sql += " AND `marker_id` = %d"
 	}
-	sql = fmt.Sprintf(sql, stype, strings.Join(products, ","), strings.Join(markerIds, ","))
-
+	sql = fmt.Sprintf(sql, stype, strings.Join(products, ","), markerId)
 	db, err := sqlEngine.Open(driver, dsn)
 	if err != nil {
 		log.Fatal(err)
@@ -54,8 +52,7 @@ func (s *shieldsTable) Find(stype int, products []string, markerIds []string, fi
 		scanArgs[i] = &values[i]
 	}
 
-	rowCount := 0
-	ret = make([]map[string]string)
+	ret = make([]map[string]string, 0)
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		if err != nil {
