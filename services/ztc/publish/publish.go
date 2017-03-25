@@ -15,38 +15,41 @@ const (
 )
 
 type Pub struct {
-	id            int // 计划id
-	title         string //标题
-	advertiserId  int // 广告主id
-	cardId        int // 创意id
-	adpositionId  int // 广告位，1-卡券、2-视频、3-开机大图、4-Banner广告
-	billing       int //计费模式，1-曝光计费、2-点击计费、3-到达计费
-	bid           float64 //出价，单位分
-	ceiling       float64 //日预算，单位分
-	againNum      float64 //权重
+	Id            int // 计划id
+	Title         string //标题
+	AdvertiserId  int // 广告主id
+	CardId        int // 创意id
+	AdpositionId  int // 广告位，1-卡券、2-视频、3-开机大图、4-Banner广告
+	Billing       int //计费模式，1-曝光计费、2-点击计费、3-到达计费
+	Bid           int //出价，单位分
+	Ceiling       int //日预算，单位分
+	AgainNum      float64 //权重
 
-	status        int //状态，1-正常、2-暂停、3-停止
-	versionNo     int //自投放平台版本号，1-版本v1、2-版本v2
-	cardStatus    int //创意状态，1-审核通过、2-等待初审、4-复审不通过、5-等待复审、6-初审不通过
-	promoteRoute  string //推广渠道，1-微信、2-APP、3-支付宝，多个渠道用英文逗号分割
-	
-	adverType     int //广告主类型，1-正式账户、2-运营账户、3-测试账户
-	adverSubtype  int //广告主子类型(仅在advertiser_type=3时有效)，1-技术测试、2-免费帐号、3-试投帐号
-	istop         bool //是否置顶，true-置顶，false-不置顶
+	Status        int //状态，1-正常、2-暂停、3-停止
+	VersionNo     int //自投放平台版本号，1-版本v1、2-版本v2
+	CardStatus    int //创意状态，1-审核通过、2-等待初审、4-复审不通过、5-等待复审、6-初审不通过
+	PromoteRoute  string //推广渠道，1-微信、2-APP、3-支付宝，多个渠道用英文逗号分割
 
-	stime         time.Time //开始投放时间
-	etime         time.Time //结束投放时间
-	createdAt     time.Time //创建时间
-	updatedAt     time.Time //更新时间
-	deletedAt     time.Time //删除时间
+	Advername     string //广告主姓名
+	Tvmid         string //tvmid
+	Shortcom      string //公司简称
+	AdverType     int //广告主类型，1-正式账户、2-运营账户、3-测试账户
+	AdverSubtype  int //广告主子类型(仅在advertiser_type=3时有效)，1-技术测试、2-免费帐号、3-试投帐号
+	Istop         bool //是否置顶，true-置顶，false-不置顶
 
-	version       string //版本号
-	deliverychans []string //投放渠道
-	targets       map[string][]string //定向信息
-	times         map[string][]string //投放时间
-	card          map[string]interface{} //卡券信息
+	Stime         time.Time //开始投放时间
+	Etime         time.Time //结束投放时间
+	CreatedAt     time.Time //创建时间
+	UpdatedAt     time.Time //更新时间
+	DeletedAt     time.Time //删除时间
 
-	product       int //产品类型，1-基础版、2-专业版
+	Version       string //版本号
+	Deliverychans []string //投放渠道
+	Targets       map[string][]string //定向信息
+	Times         map[string][]string //投放时间
+	Card          map[string]string //卡券信息
+
+	Product       int //产品类型，1-基础版、2-专业版
 }
 
 func NewPub(pub map[string]string) (p *Pub) {
@@ -60,115 +63,124 @@ func NewPub(pub map[string]string) (p *Pub) {
 func (p *Pub) setPub(pub map[string]string) {
 	if id, ok := pub["id"]; ok {
 		if v, err := strconv.Atoi(id); err == nil {
-			p.id = v
+			p.Id = v
 		} else {
 			panic(err.Error())
 		}
 	}
 	if title, ok := pub["title"]; ok {
-		p.title = title
+		p.Title = title
 	}
 	if advertiserId, ok := pub["advertiser_id"]; ok {
 		if v, err := strconv.Atoi(advertiserId); err == nil {
-			p.advertiserId = v
+			p.AdvertiserId = v
 		}
 	}
 	if cardId, ok := pub["card_id"]; ok {
 		if v, err := strconv.Atoi(cardId); err == nil {
-			p.cardId = v
+			p.CardId = v
 		}
 	}
 	if adpositionId, ok := pub["adposition_id"]; ok {
 		if v, err := strconv.Atoi(adpositionId); err == nil {
-			p.adpositionId = v
+			p.AdpositionId = v
 		}
 	}
 	if billing, ok := pub["billing"]; ok {
 		if v, err := strconv.Atoi(billing); err == nil {
-			p.billing = v
+			p.Billing = v
 		}
 	}
 	if bid, ok := pub["bid"]; ok {
-		if v, err := strconv.ParseFloat(bid, 64); err == nil {
-			p.bid = v
+		if v, err := strconv.Atoi(bid); err == nil {
+			p.Bid = v
 		}
 	}
 	if ceiling, ok := pub["ceiling"]; ok {
-		if v, err := strconv.ParseFloat(ceiling, 64); err == nil {
-			p.ceiling = v
+		if v, err := strconv.Atoi(ceiling); err == nil {
+			p.Ceiling = v
 		}
 	}
 	if againNum, ok := pub["again_num"]; ok {
 		if v, err := strconv.ParseFloat(againNum, 64); err == nil {
-			p.againNum = v
+			p.AgainNum = v
 		}
 	}
 	if status, ok := pub["status"]; ok {
 		if v, err := strconv.Atoi(status); err == nil {
-			p.status = v
+			p.Status = v
 		}
 	}
 	if versionNo, ok := pub["versionNo"]; ok {
 		if v, err := strconv.Atoi(versionNo); err == nil {
-			p.versionNo = v
+			p.VersionNo = v
 		}
 	}
 	if cardStatus, ok := pub["cardStatus"]; ok {
 		if v, err := strconv.Atoi(cardStatus); err == nil {
-			p.cardStatus = v
+			p.CardStatus = v
 		}
 	}
 	if promoteRoute, ok := pub["promoteRoute"]; ok {
-		p.promoteRoute = promoteRoute
+		p.PromoteRoute = promoteRoute
+	}
+	if adverName, ok := pub["advertiser_name"]; ok {
+		p.Advername = adverName
+	}
+	if tvmid, ok := pub["tvmid"]; ok {
+		p.Tvmid = tvmid
+	}
+	if shortcom, ok := pub["shortcom"]; ok {
+		p.Shortcom = shortcom
 	}
 	if adverType, ok := pub["adverType"]; ok {
 		if v, err := strconv.Atoi(adverType); err == nil {
-			p.adverType = v
+			p.AdverType = v
 		}
 	}
 	if adverSubtype, ok := pub["adverSubtype"]; ok {
 		if v, err := strconv.Atoi(adverSubtype); err == nil {
-			p.adverSubtype = v
+			p.AdverSubtype = v
 		}
 	}
 	if istop, ok := pub["istop"]; ok {
 		if v, err := strconv.ParseBool(istop); err == nil {
-			p.istop = v
+			p.Istop = v
 		}
 	}
 	if stime, ok := pub["stime"]; ok {
 		if t, err := time.Parse("2006-01-02 15:04:05", stime); err == nil {
-			p.stime = t
+			p.Stime = t
 		}
 	}
 	if etime, ok := pub["etime"]; ok {
 		if t, err := time.Parse("2006-01-02 15:04:05", etime); err == nil {
-			p.etime = t
+			p.Etime = t
 		}
 	}
 	if createdAt, ok := pub["created_at"]; ok {
 		if t, err := time.Parse("2006-01-02 15:04:05", createdAt); err == nil {
-			p.createdAt = t
+			p.CreatedAt = t
 		}
 	}
 	if updatedAt, ok := pub["updated_at"]; ok {
 		if t, err := time.Parse("2006-01-02 15:04:05", updatedAt); err == nil {
-			p.updatedAt = t
+			p.UpdatedAt = t
 		}
 	}
 	if deletedAt, ok := pub["deleted_at"]; ok {
 		if t, err := time.Parse("2006-01-02 15:04:05", deletedAt); err == nil {
-			p.deletedAt = t
+			p.DeletedAt = t
 		}
 	}
 }
 
 func (p *Pub) setPubversion() {
-	pubversion := models.Publishs().LastestPubversion(p.id, p.versionNo)
+	pubversion := models.Publishs().LastestPubversion(p.Id, p.VersionNo)
 	if version, ok := pubversion["version"].(string); ok {
-		p.version = version
+		p.Version = version
 	}
-	p.targets = make(map[string][]string)
+	p.Targets = make(map[string][]string)
 	if targets, ok := pubversion["target"].([]interface{}); ok {
 		for _, v := range targets {
 			if target, ok := v.(map[string]interface{}); ok {
@@ -177,45 +189,45 @@ func (p *Pub) setPubversion() {
 					for _, vv := range tarval {
 						switch vvv := vv.(type) {
 						case float64:
-							p.targets[tarkey] = append(p.targets[tarkey], strconv.FormatFloat(vvv, 'f', 0, 64))
+							p.Targets[tarkey] = append(p.Targets[tarkey], strconv.FormatFloat(vvv, 'f', 0, 64))
 						case string:
-							p.targets[tarkey] = append(p.targets[tarkey], vvv)
+							p.Targets[tarkey] = append(p.Targets[tarkey], vvv)
 						}
 					}
 				}
 			}
 		}
 	}
-	p.times = make(map[string][]string)
+	p.Times = make(map[string][]string)
 	if times, ok := pubversion["time"].(map[string]interface{}); ok {
 		for tk, tv := range times {
 			if tvv, ok := tv.([]interface{}); ok {
 				for _, tvvv := range tvv {
 					tvvvv := tvvv.(string)
-					p.times[tk] = append(p.times[tk], tvvvv[0:2])
+					p.Times[tk] = append(p.Times[tk], tvvvv[0:2])
 				}
 			}
 		}
 	}
-	p.deliverychans = make([]string, 3)
+	p.Deliverychans = make([]string, 3)
 	if delichans, ok := pubversion["deliverychannels"].([]interface{}); ok {
 		for dk, dv := range delichans {
 			dvv := dv.(float64)
-			p.deliverychans[dk] = strconv.FormatFloat(dvv, 'f', 0, 64)
+			p.Deliverychans[dk] = strconv.FormatFloat(dvv, 'f', 0, 64)
 		}
 	}
-	p.card = make(map[string]interface{}, 4)
+	p.Card = make(map[string]string, 4)
 	if cards, ok := pubversion["card"].([]interface{}); ok {
 		if card, ok := cards[0].(map[string]interface{}); ok {
 			for ck, cv := range card {
 				if ck == "title" || ck == "logo" || ck == "url" {
-					p.card[ck] = cv.(string)
+					p.Card[ck] = cv.(string)
 				} else if (ck == "type") {
 					switch cvv := cv.(type) {
 					case float64:
-						p.card[ck] = strconv.FormatFloat(cvv, 'f', 0, 64)
+						p.Card[ck] = strconv.FormatFloat(cvv, 'f', 0, 64)
 					case string:
-						p.card[ck] = cvv
+						p.Card[ck] = cvv
 					}
 				}
 			}
@@ -227,26 +239,22 @@ func (p *Pub) setProduct() {
 	isBasic := false
 	basicAdvids := models.Advversions().BasicAdverIds()
 	for _, v := range basicAdvids {
-		if v == p.advertiserId {
+		if v == p.AdvertiserId {
 			isBasic = true
 		}
 	}
 	if isBasic == true {
-		p.product = PRODUCT_BASIC
+		p.Product = PRODUCT_BASIC
 	} else {
-		p.product = PRODUCT_PROFESSIONAL
+		p.Product = PRODUCT_PROFESSIONAL
 	}
 }
 
-func (p *Pub) Product() int {
-	return p.product
-}
-
 func (p *Pub) Agents() (agents []int) {
-	if len(p.promoteRoute) <= 0 {
+	if len(p.PromoteRoute) <= 0 {
 		agents = []int{1}
 	} else {
-		pr := strings.Split(p.promoteRoute, ",")
+		pr := strings.Split(p.PromoteRoute, ",")
 		for _, v := range pr {
 			if vv, err := strconv.Atoi(v); err == nil {
 				agents = append(agents, vv)
@@ -258,5 +266,5 @@ func (p *Pub) Agents() (agents []int) {
 
 // DisplayWay get the ad display way
 func (p *Pub) DisplayWay() int {
-	return p.adpositionId
+	return p.AdpositionId
 }

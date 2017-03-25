@@ -7,7 +7,7 @@ import (
 	//advservice "services/advertiser"
 	_ "strconv"
 	_ "reflect"
-	
+	"encoding/json"
 )
 
 func main() {
@@ -19,7 +19,6 @@ func main() {
 	// publishs := models.Publishs().JoinPubsByIds([]int{22983,22969})
 	publishs := models.Publishs().JoinPubsByIds([]int{22956})
 	pub := pubservice.NewPub(publishs[0])
-	// fmt.Println(pub)
 	//fmt.Println(pub.Product())
 	//fmt.Println(pub.Agents())
 	pubtarget := pubservice.NewPubTarget(pub, "")

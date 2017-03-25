@@ -40,9 +40,9 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	ret = true
 	// 检查日期
 	date, _  := time.Parse("2006-01-02", pt.date)
-	if date.After(pt.pub.etime) || date.Before(pt.pub.stime) {
+	if date.After(pt.pub.Etime) || date.Before(pt.pub.Stime) {
 		ret = false
-		msg := fmt.Sprintf("Time interval: %s ~ %s, args: %s", pt.pub.stime.Format("2006-01-02"), pt.pub.etime.Format("2006-01-02"), date);
+		msg := fmt.Sprintf("Time interval: %s ~ %s, args: %s", pt.pub.Stime.Format("2006-01-02"), pt.pub.Etime.Format("2006-01-02"), date);
 		reports = append(reports, msg)
 	}
 
@@ -54,10 +54,10 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 		week = int(weekday)
 	}
 	isCurHourValid := false
-	if len(pt.pub.times) == 0 {
+	if len(pt.pub.Times) == 0 {
 		isCurHourValid = true
 	}
-	hours, ok := pt.pub.times[strconv.Itoa(week)]
+	hours, ok := pt.pub.Times[strconv.Itoa(week)]
 	if ok {
 		hour := time.Now().Hour()
 		for _, v := range hours {
@@ -68,38 +68,38 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	}
 	if isCurHourValid == false {
 		ret = false
-		reports = append(reports, fmt.Sprintf("Hour points: %v", pt.pub.times))
+		reports = append(reports, fmt.Sprintf("Hour points: %v", pt.pub.Times))
 	}
 
 	// 计划状态
-	if pt.pub.status != 1 {
+	if pt.pub.Status != 1 {
 		ret = false
-		switch pt.pub.status {
+		switch pt.pub.Status {
 		case 2:
 			reports = append(reports, "Publish status: 2(pause)")
 		case 3:
 			reports = append(reports, "Publish status: 3(suspend)")
 		default:
-			reports = append(reports, fmt.Sprintf("Publish status: %d(unknonw)", pt.pub.status))
+			reports = append(reports, fmt.Sprintf("Publish status: %d(unknonw)", pt.pub.Status))
 		}
 	}
 	
 	// 计划是否被删除
-	if !pt.pub.deletedAt.IsZero() {
+	if !pt.pub.DeletedAt.IsZero() {
 		ret = false
 		reports = append(reports, "Publish is deleted")
 	}
 	
 	// 验证创意审核状态
-	if pt.pub.cardStatus != 1 {
+	if pt.pub.CardStatus != 1 {
 		ret = false
-		switch pt.pub.cardStatus {
+		switch pt.pub.CardStatus {
 		case 2, 5:
 			reports = append(reports, "Card waiting for check")
 		case 4, 6:
 			reports = append(reports, "Card check not passed")
 		default:
-			reports = append(reports, fmt.Sprintf("Card status is unknown(%d)", pt.pub.cardStatus))
+			reports = append(reports, fmt.Sprintf("Card status is unknown(%d)", pt.pub.CardStatus))
 		}
 	}
 	
@@ -107,48 +107,44 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	displayWay := pt.pub.DisplayWay()
 	// 视频创意不验证logo
 	if displayWay != DISPLAY_VIDEO {
-		logo, ok := pt.pub.card["logo"]
+		logo, ok := pt.pub.Card["logo"]
 		if !ok {
 			ret = false
 			reports = append(reports, "Card logo is not existed.")
 		} else {
-			if logoStr, ok := logo.(string); ok {
-				logoStr = strings.ToLower(logoStr)
-				if !strings.HasPrefix(logoStr, "http://") && !strings.HasPrefix(logoStr, "https://") {
-					ret = false
-					reports = append(reports, "Card logo is valid.")
-				}
+			logo = strings.ToLower(logo)
+			if !strings.HasPrefix(logo, "http://") && !strings.HasPrefix(logo, "https://") {
+				ret = false
+				reports = append(reports, fmt.Sprintf("Card logo %s is valid.", logo))
 			}
 		}
 	}
 	// 视频和开机大图不验证url
 	if displayWay != DISPLAY_VIDEO || displayWay != DISPLAY_KJDT {
-		url, ok := pt.pub.card["url"]
+		url, ok := pt.pub.Card["url"]
 		if !ok {
 			ret = false
 			reports = append(reports, "Card url is not existed.")
 		} else {
-			if urlStr, ok := url.(string); ok {
-				urlStr = strings.ToLower(urlStr)
-				if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
-					ret = false
-					reports = append(reports, "Card url is valid.")
-				}
+			url = strings.ToLower(url)
+			if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+				ret = false
+				reports = append(reports, fmt.Sprintf("Card url %s is valid.", url))
 			}
 		}
 	}
 
 	// 判定广告主是否被屏蔽
-	shields := models.Shields().Find(3, []string{"1","2"}, pt.pub.advertiserId, []string{"id"})
+	shields := models.Shields().Find(3, []string{"1","2"}, pt.pub.AdvertiserId, []string{"id"})
 	if len(shields) > 0 {
 		ret = false
-		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " is in shields table")
+		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.AdvertiserId) + " is in shields table")
 	}
 
 	// 判断广告主资质
-	if !advService.New(pt.pub.advertiserId).HasSyncCondition() {
+	if !advService.New(pt.pub.AdvertiserId).HasSyncCondition() {
 		ret = false
-		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " qualification is not enough.")
+		reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.AdvertiserId) + " qualification is not enough.")
 	}
 
 	c, err := redis.Dial("tcp", config.Get("REDIS", "127.0.0.1:6379"))
@@ -158,8 +154,8 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 	defer c.Close()
 	
 	// 判断广告主是否还有余额(测试广告主不检测广告主余额)
-	if pt.pub.adverType != 3 {
-		advkey := "budget:adv:" + strconv.Itoa(pt.pub.advertiserId)
+	if pt.pub.AdverType != 3 {
+		advkey := "budget:adv:" + strconv.Itoa(pt.pub.AdvertiserId)
 		ret, err := c.Do("HGETALL", advkey)
 		if err != nil {
 			log.Fatal(err)
@@ -184,14 +180,14 @@ func (pt *PubTarget) Detect() (ret bool, reports []string) {
 			}
 			if consume >= amount {
 				ret = false
-				reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.advertiserId) + " amount not enough.")
+				reports = append(reports, "Advertiser: " + strconv.Itoa(pt.pub.AdvertiserId) + " amount not enough.")
 			}
 		}
 	}
 
 	// 判断预算是否花超
 	if time.Now().Format("2006-01-02") == pt.date {
-		pubkey := "budget:pub:" + strconv.Itoa(pt.pub.id) + ":" + time.Now().Format("20060102")
+		pubkey := "budget:pub:" + strconv.Itoa(pt.pub.Id) + ":" + time.Now().Format("20060102")
 		ret, err := c.Do("HGETALL", pubkey)
 		if err != nil {
 			log.Fatal(err)

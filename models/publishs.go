@@ -128,6 +128,8 @@ func (p *publishsTable) JoinPubsByIds(publishids interface{}) []map[string]strin
 		"cards.status as cardStatus",
 		"cards.promote_type as promoteType",
 		"cards.promote_route as promoteRoute",
+		"advertisers.name as advertiser_name",
+		"advertisers.tvmid as tvmid",
 		"advertisers.shortcom as shortcom",
 		"advertisers.logo as comlogo",
 		"advertisers.industry",
