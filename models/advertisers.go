@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-type advertisersTable struct{}
+type advertisers struct{}
 
-func Advertisers() *advertisersTable {
-	return new(advertisersTable)
+func Advertisers() *advertisers {
+	return new(advertisers)
 }
 
-func (a *advertisersTable) AdversByIds(advertiserIds []string, fields interface{}) []map[string]string {
+func (a *advertisers) AdversByIds(advertiserIds []string, fields interface{}) []map[string]string {
 	if advertiserIds == nil || len(advertiserIds) == 0 {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (a *advertisersTable) AdversByIds(advertiserIds []string, fields interface{
 	return res
 }
 
-func (a *advertisersTable) Qualifis(aids []string) []map[string]string {
+func (a *advertisers) Qualifis(aids []string) []map[string]string {
 	if aids == nil || len(aids) == 0 {
 		return nil
 	}
@@ -103,12 +103,7 @@ func (a *advertisersTable) Qualifis(aids []string) []map[string]string {
 	sql = fmt.Sprintf(sql, strings.Join(fields, ","), strings.Join(aids, ","))
 	//fmt.Println(sql)
 
-	db, err := sqlEngine.Open(driver, dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	rows, err := db.Query(sql)
+	rows, err := Conn.Query(sql)
 	if err != nil {
 		log.Fatal(err)
 	}

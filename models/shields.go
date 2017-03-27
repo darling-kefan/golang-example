@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-type shieldsTable struct{}
+type shields struct{}
 
-func Shields() *shieldsTable {
-	return new(shieldsTable)
+func Shields() *shields {
+	return new(shields)
 }
 
 // 查找屏蔽记录
@@ -19,7 +19,7 @@ func Shields() *shieldsTable {
 // products  产品id，1直通车基础版 2-直通车专业版 3-KA
 // markerIds 分类id/创意id/广告主id，与参数$type对应
 // fields    字段
-func (s *shieldsTable) Find(stype int, products []string, markerId int, fields []string) (ret []map[string]string) {
+func (s *shields) Find(stype int, products []string, markerId int, fields []string) (ret []map[string]string) {
 	sql := "SELECT " + strings.Join(fields, ",") + " FROM `shields` WHERE `status` = 1"
 	if stype == 1 || stype == 2 || stype == 3 {
 		sql += " AND `type` = %d"
@@ -31,12 +31,7 @@ func (s *shieldsTable) Find(stype int, products []string, markerId int, fields [
 		sql += " AND `marker_id` = %d"
 	}
 	sql = fmt.Sprintf(sql, stype, strings.Join(products, ","), markerId)
-	db, err := sqlEngine.Open(driver, dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	rows, err := db.Query(sql)
+	rows, err := Conn.Query(sql)
 	if err != nil {
 		log.Fatal(err)
 	}

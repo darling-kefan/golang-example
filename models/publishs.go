@@ -14,13 +14,13 @@ import (
 	"config"
 )
 
-type publishsTable struct{}
+type publishs struct{}
 
-func Publishs() *publishsTable {
-	return new(publishsTable)
+func Publishs() *publishs {
+	return new(publishs)
 }
 
-func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
+func (p *publishs) PubsByIds(publishids interface{}) []map[string]string {
 	if publishids == nil {
 		return nil
 	}
@@ -37,12 +37,7 @@ func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
 	}
 	
 	sql := "SELECT * FROM `publishs` WHERE `id` IN (%s)"
-	db, err := sqlEngine.Open(driver, dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	rows, err := db.Query(fmt.Sprintf(sql, strings.Join(pubids, ",")))
+	rows, err := Conn.Query(fmt.Sprintf(sql, strings.Join(pubids, ",")))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,7 +82,7 @@ func (p *publishsTable) PubsByIds(publishids interface{}) []map[string]string {
 }
 
 // GetPubByPubid get publish by publish_id
-func (p *publishsTable) JoinPubsByIds(publishids interface{}) []map[string]string {
+func (p *publishs) JoinPubsByIds(publishids interface{}) []map[string]string {
 	if publishids == nil {
 		return nil
 	}
@@ -145,25 +140,7 @@ func (p *publishsTable) JoinPubsByIds(publishids interface{}) []map[string]strin
 		"LEFT JOIN `advertisers` ON `publishs`.`advertiser_id` = `advertisers`.`id` " +
 		"WHERE `publishs`.`id` IN (%s)"
 
-	db, err := sqlEngine.Open(driver, dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	// Prepare action can not support returning multi rows ????
-	/*stmtout, err := db.Prepare(sql)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmtout.Close()
-	rows, err := stmtout.Query(strings.Join(pubids, ","))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer rows.Close()*/
-
-	rows, err := db.Query(fmt.Sprintf(sql, strings.Join(pubids, ",")))
+	rows, err := Conn.Query(fmt.Sprintf(sql, strings.Join(pubids, ",")))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -207,7 +184,7 @@ func (p *publishsTable) JoinPubsByIds(publishids interface{}) []map[string]strin
 }
 
 // Get lastest pubversion
-func (p *publishsTable) LastestPubversion(pubid int, pubvers int) (ret map[string]interface{}) {
+func (p *publishs) LastestPubversion(pubid int, pubvers int) (ret map[string]interface{}) {
 	var apiUrl string
 	if pubvers == 2 {
 		apiUrl = config.Get("ZTC_API_HOST_V2", "http://alpha.e.tvm.cn/restful/api/publish/pubversion") +
