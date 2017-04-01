@@ -8,21 +8,16 @@ import (
 	"strings"
 )
 
-type cardsTable struct{}
+type cards struct{}
 
-func Cards() *cardsTable {
-	return new(cardsTable)
+func Cards() *cards {
+	return new(cards)
 }
 
-func (c *cardsTable) CardsByIds(cardIds []string) []map[string]string {
+func (c *cards) CardsByIds(cardIds []string) []map[string]string {
 	sql := "SELECT * FROM `cards` WHERE `deleted_at` IS NULL AND `id` IN (%s)"
 	sql = fmt.Sprintf(sql, strings.Join(cardIds, ","))
-	db, err := sqlEngine.Open(driver, dsn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	rows, err := db.Query(sql)
+	rows, err := Conn.Query(sql)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,7 +26,6 @@ func (c *cardsTable) CardsByIds(cardIds []string) []map[string]string {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	values := make([]sqlEngine.RawBytes, len(columns))
 	scanVals := make([]interface{}, len(columns))
 	for k := range values {

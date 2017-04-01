@@ -58,6 +58,12 @@ type Data struct {
 	DetectRepo *DetectReports    `json:"detectReports"`
 }
 
+type Result struct {
+	Code   string `json:"code"`
+	Errmsg string `json:"errmsg"`
+	Dt     *Data  `json:"data"`
+}
+
 func main() {
 	http.HandleFunc("/publish/profile", handler)
 	http.ListenAndServe(":9001", nil)
@@ -67,9 +73,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	pubid, _ := strconv.Atoi(r.Form["pubid"][0])
-	date  := r.Form["date"][0]
+	date := r.Form["date"][0]
 
+	// defer models.Conn.Close()
 	pubs := models.Publishs().JoinPubsByIds([]int{pubid})
+	if len(pubs) == 0 {
+		render(w, appErrorf(r.Form["pubid"][0] + " is not exists."))
+		return
+	}
 	pub  := pubService.NewPub(pubs[0])
 
 	pubInfo := new(PubInfo)
@@ -192,7 +203,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	data.DetectRepo = detectReports
 	data.Times      = times
 	data.Targets    = targets
+
+	result := new(Result)
+	result.Code = "0"
+	result.Errmsg = ""
+	result.Dt = data
 	
-	ret, _ := json.Marshal(data)
+	render(w, result)
+}
+
+type appError struct {
+	Code   string `json:"code"`
+	Errmsg string `json:"errmsg"`
+}
+
+func appErrorf(errmsg string) *appError {
+	return &appError{
+		Code:   "500",
+		Errmsg: errmsg,
+	}
+}
+
+func render(w http.ResponseWriter, v interface{}) {
+	ret, _ := json.Marshal(v)
 	fmt.Fprintf(w, "%s", ret)
 }
